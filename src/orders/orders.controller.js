@@ -13,7 +13,7 @@ const nextId = require("../utils/nextId");
     dishes: -- [] Json object
  */
 
-function orderExists(request, response, next) {
+function orderExist(request, response, next) {
     const { orderId } = request.params;
     const foundOrder = orders.find((order) => order.id === orderId);
     if (foundOrder) {
@@ -26,7 +26,7 @@ function orderExists(request, response, next) {
     });
 }
 
-function bodyDataHas(propertyName) {
+function bodyHasData(propertyName) {
     return function (request, response, next) {
         const { data = {} } = request.body;
         if (data[propertyName]) {
@@ -36,7 +36,7 @@ function bodyDataHas(propertyName) {
     };
 }
 
-function quantityIsValidNumber(request, response, next) {
+function quantityIsValid(request, response, next) {
     const { data: { dishes } = {} } = request.body;
     for (let [index, dish] of dishes.entries()) {
         if (!Number.isInteger(dish.quantity) || dish.quantity <= 0) {
@@ -50,7 +50,7 @@ function quantityIsValidNumber(request, response, next) {
     next();
 }
 
-function dishesAreValidArray(request, response, next) {
+function dishesArrayIsValid(request, response, next) {
     const { data: { dishes } = {} } = request.body;
     if (!Array.isArray(dishes) || dishes.length < 1) {
         return next({
@@ -84,7 +84,7 @@ function statusIsValid(request, response, next) {
     next();
 }
 
-function statusCanBeDeleted(request, response, next) {
+function statusDeletedCheck(request, response, next) {
     const order = response.locals.order;
     if (order.status !== "pending") {
         return next({
@@ -95,10 +95,10 @@ function statusCanBeDeleted(request, response, next) {
     next();
 }
 
-function idMatchesOrderId(request, response, next) {
+function idMatchesOrder(request, response, next) {
     const { orderId } = request.params;
     const { data: { id } = {} } = request.body;
-    if (id && id != orderId) {
+    if (id && id !== orderId) {
         return next({
             status: 400,
             message: `Order id does not match route id. Order: ${id}, Route: ${orderId}`,
@@ -141,16 +141,33 @@ function read(req, res) {
 
 function destroy(req, res) {
     const { orderId } = req.params;
-    const index = orders.findIndex((use) => order.id === orderId);
-    uses.splice(index, 1);
+    const index = orders.findIndex((order) => order.id === orderId);
+    orders.splice(index, 1);
     res.sendStatus(204);
 }
 
 module.exports = {
-    create,
-    update,
     list,
-    read,
-    destroy,
+    read: [orderExist, read],
+    create: [
+        bodyHasData("deliverTo"),
+        bodyHasData("mobileNumber"),
+        bodyHasData("dishes"),
+        dishesArrayIsValid,
+        quantityIsValid,
+        create,
+    ],
+    update: [
+        orderExist,
+        bodyHasData("deliverTo"),
+        bodyHasData("mobileNumber"),
+        bodyHasData("dishes"),
+        dishesArrayIsValid,
+        quantityIsValid,
+        statusIsValid,
+        idMatchesOrder,
+        update,
+    ],
+    delete: [orderExist, statusDeletedCheck, destroy],
 };
 
