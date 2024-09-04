@@ -1,10 +1,8 @@
 const path = require("path");
-
 // Use the existing order data
 const orders = require(path.resolve("src/data/orders-data"));
 // Use this function to assigh ID's when necessary
 const nextId = require("../utils/nextId");
-
 /*
     id: "5a887d326e83d3c5bdcbee398ea32aff",
     deliverTo: "308 Negra Arroyo Lane, Albuquerque, NM",
